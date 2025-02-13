@@ -41,21 +41,21 @@ class Movie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(60))
     year = db.Column(db.String(4))
-
-@app.cli.command()
-@click.option('--drop', is_flag=True, help='Create after drop.')
-def initdb(drop):
-    if drop:
-        db.drop_all()
-    db.create_all()
-    click.echo('Initialized database.')
+    
+@app.context_processor
+def inject_user():
+    user = User.query.first()
+    return dict(user=user)
+    
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
 
 @app.route('/')
 @app.route('/index')
 def index():
-    user = User.query.first()
     movies = Movie.query.all()
-    return render_template('index.html', user=user, movies=movies, year=2025)
+    return render_template('index.html', movies=movies, year=2025)
 @app.route('/hello')
 def hello():
     return '<h1>Hello Totoro!</h1><img src="http://helloflask.com/totoro.gif">'
@@ -69,6 +69,14 @@ def test_url_for():
     print(url_for('user_page', name='greyli'))
     print(url_for('test_url_for', num=2))
     return 'Test page'
+
+@app.cli.command()
+@click.option('--drop', is_flag=True, help='Create after drop.')
+def initdb(drop):
+    if drop:
+        db.drop_all()
+    db.create_all()
+    click.echo('Initialized database.')
 
 @app.cli.command()
 def forge():
